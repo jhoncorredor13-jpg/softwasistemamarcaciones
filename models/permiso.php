@@ -66,10 +66,15 @@ class Permiso
         return false;
     }
 
-    public function actualizarEstado()
+    public function actualizarEstado($fecha_fin = null)
     {
+        $sqlFecha = "";
+        if (!empty($fecha_fin)) {
+            $sqlFecha = ", fecha_fin = :fecha_fin";
+        }
+
         $query = "UPDATE " . $this->table_name . " 
-                  SET estado = :estado 
+                  SET estado = :estado {$sqlFecha} 
                   WHERE id_permiso = :id_permiso";
 
         $stmt = $this->conn->prepare($query);
@@ -79,6 +84,9 @@ class Permiso
 
         $stmt->bindParam(":estado", $this->estado);
         $stmt->bindParam(":id_permiso", $this->id_permiso);
+        if (!empty($fecha_fin)) {
+            $stmt->bindParam(":fecha_fin", $fecha_fin);
+        }
 
         if ($stmt->execute()) {
             return true;

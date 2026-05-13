@@ -88,18 +88,53 @@ class PermisoController
             if (!empty($id_permiso) && in_array($estado, ['aprobado', 'rechazado'])) {
                 $this->permiso->id_permiso = $id_permiso;
                 $this->permiso->estado = $estado;
+                $fecha_fin = $_POST['fecha_fin'] ?? null;
 
-                if ($this->permiso->actualizarEstado()) {
+                if ($this->permiso->actualizarEstado($fecha_fin)) {
                     $_SESSION['alert'] = [
                         'icon' => 'success',
                         'title' => 'Estado actualizado',
-                        'text' => 'El permiso ha sido ' . $estado . '.'
+                        'text' => 'La solicitud ha sido ' . $estado . '.'
                     ];
                 } else {
                     $_SESSION['alert'] = [
                         'icon' => 'error',
                         'title' => 'Error',
-                        'text' => 'No se pudo actualizar el estado del permiso.'
+                        'text' => 'No se pudo actualizar el estado.'
+                    ];
+                }
+            }
+            header("Location: ../views/dashboard/permisos.php");
+            exit;
+        }
+    }
+
+    public function asignarAdmin()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_trabajador = $_POST['id_trabajador'] ?? '';
+            $fecha_inicio = $_POST['fecha_inicio'] ?? '';
+            $fecha_fin = $_POST['fecha_fin'] ?? '';
+            $motivo = $_POST['motivo'] ?? '';
+
+            if (!empty($id_trabajador) && !empty($fecha_inicio) && !empty($fecha_fin) && !empty($motivo)) {
+                $this->permiso->id_trabajador = $id_trabajador;
+                $this->permiso->fecha_inicio = $fecha_inicio;
+                $this->permiso->fecha_fin = $fecha_fin;
+                $this->permiso->motivo = $motivo;
+                $this->permiso->estado = 'aprobado'; // Se asume aprobado ya que lo asigna el admin
+
+                if ($this->permiso->crearPermiso()) {
+                    $_SESSION['alert'] = [
+                        'icon' => 'success',
+                        'title' => 'Asignado correctamente',
+                        'text' => 'El permiso/vacación ha sido registrado y aprobado.'
+                    ];
+                } else {
+                    $_SESSION['alert'] = [
+                        'icon' => 'error',
+                        'title' => 'Error',
+                        'text' => 'No se pudo registrar la asignación.'
                     ];
                 }
             }
@@ -118,6 +153,8 @@ if (isset($_GET['accion'])) {
         $controller->solicitarPermiso();
     } elseif ($accion === 'cambiarEstado') {
         $controller->cambiarEstado();
+    } elseif ($accion === 'asignar_admin') {
+        $controller->asignarAdmin();
     }
 }
 ?>

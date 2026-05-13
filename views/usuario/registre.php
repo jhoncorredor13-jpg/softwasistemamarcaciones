@@ -220,9 +220,7 @@ try {
         <div class="field">
           <label>Rol *</label>
           <select name="rol" id="rol" onchange="toggleTrabajador()" required>
-            <option value="">-- Seleccione --</option>
-            <option value="administrador">Administrador</option>
-            <option value="trabajador">Trabajador</option>
+            <option value="trabajador" selected>Trabajador</option>
           </select>
         </div>
 
@@ -232,9 +230,11 @@ try {
             <option value="">-- Seleccione --</option>
 
             <?php foreach ($cargos as $c): ?>
-              <option value="<?= htmlspecialchars($c['id_cargo']) ?>">
-                <?= htmlspecialchars($c['nombre']) ?>
-              </option>
+              <?php if (strtolower($c['nombre']) !== 'administrador'): ?>
+                <option value="<?= htmlspecialchars($c['id_cargo']) ?>">
+                  <?= htmlspecialchars($c['nombre']) ?>
+                </option>
+              <?php endif; ?>
             <?php endforeach; ?>
 
           </select>

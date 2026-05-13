@@ -226,8 +226,7 @@ try {
         <div class="field">
           <label>Rol *</label>
           <select name="rol" id="rol" onchange="toggleTrabajador()" required>
-            <option value="administrador" <?= $user_data['rol'] === 'administrador' ? 'selected' : '' ?>>Administrador</option>
-            <option value="trabajador" <?= $user_data['rol'] === 'trabajador' ? 'selected' : '' ?>>Trabajador</option>
+            <option value="trabajador" selected>Trabajador</option>
           </select>
         </div>
 
@@ -236,9 +235,11 @@ try {
           <select name="id_cargo" required>
             <option value="">-- Seleccione --</option>
             <?php foreach ($cargos as $c): ?>
-              <option value="<?= htmlspecialchars($c['id_cargo']) ?>" <?= $user_data['id_cargo'] == $c['id_cargo'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($c['nombre']) ?>
-              </option>
+              <?php if (strtolower($c['nombre']) !== 'administrador'): ?>
+                <option value="<?= htmlspecialchars($c['id_cargo']) ?>" <?= $user_data['id_cargo'] == $c['id_cargo'] ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($c['nombre']) ?>
+                </option>
+              <?php endif; ?>
             <?php endforeach; ?>
           </select>
         </div>

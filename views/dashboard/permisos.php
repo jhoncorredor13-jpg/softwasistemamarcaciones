@@ -5,9 +5,16 @@ if (!isset($_SESSION['usuario']) || strtolower($_SESSION['usuario']['rol']) !== 
 }
 
 require_once __DIR__ . '/../../controllers/PermisoController.php';
+require_once __DIR__ . '/../../models/usuario.php';
 
 $controller = new PermisoController();
 $permisos = $controller->indexAdmin();
+
+// Para el select de trabajadores
+require_once __DIR__ . '/../../config/database.php';
+$db = (new Database())->conectar();
+$usuarioModel = new Usuario($db);
+$trabajadoresList = $usuarioModel->listarTrabajadores();
 
 $admin = $_SESSION['usuario'];
 $alert = $_SESSION['alert'] ?? null;
@@ -65,38 +72,61 @@ unset($_SESSION['alert']);
         .page-title { font-size: 22px; font-weight: 400; color: #000; margin-bottom: 8px; }
         .divider { border-bottom: 1px solid #333; margin-bottom: 30px; width: 100%; }
         .card {
-            background-color: #fff; border-radius: 35px; padding: 25px 40px;
-            margin-bottom: 30px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            background-color: #fff; border-radius: 12px; padding: 25px 30px;
+            margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
-        .card-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #777;
+        .search-container {
+            margin-bottom: 25px; position: relative;
         }
-        .card-header h2 { font-size: 20px; font-weight: 500; color: #111; margin: 0; }
-        .search-bar { margin-bottom: 20px; }
-        .search-bar input {
-            width: 300px; padding: 9px 14px; border: 1px solid #777;
-            border-radius: 8px; font-family: 'Roboto', sans-serif; font-size: 13px; outline: none;
+        .search-input {
+            width: 100%; padding: 15px 45px; border: 2px solid #52A65A;
+            border-radius: 12px; font-size: 16px; outline: none;
+            box-shadow: 0 4px 6px rgba(82, 166, 90, 0.1);
         }
-        .search-bar input:focus { border-color: #FFC107; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        thead tr { background: #FFC107; color: #000; }
-        thead th { padding: 11px 14px; text-align: left; font-weight: 500; border: 1px solid #333; }
-        tbody tr { border-bottom: 1px solid #ddd; }
-        tbody tr:hover { background: #f9f9f9; }
-        tbody td { padding: 11px 14px; color: #111; border: 1px solid #ddd; }
-        .badge { padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        .badge-pendiente { background-color: #FFC107; color: #000; }
-        .badge-aprobado { background-color: #4CAF50; color: #fff; }
-        .badge-rechazado { background-color: #F44336; color: #fff; }
-        .btn-action {
-            border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; color: #fff;
+        .search-icon {
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            color: #52A65A; font-size: 18px;
         }
-        .btn-approve { background: #4CAF50; }
-        .btn-approve:hover { background: #388E3C; }
-        .btn-reject { background: #F44336; }
-        .btn-reject:hover { background: #D32F2F; }
-        .empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+        .permiso-card {
+            background: #fff; border: 1px solid #eee; border-radius: 15px;
+            padding: 20px; margin-bottom: 15px; display: flex;
+            align-items: center; justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .permiso-card:hover { border-color: #52A65A; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .permiso-info { display: flex; align-items: center; gap: 20px; }
+        .worker-avatar {
+            width: 50px; height: 50px; background: #dfeee2; color: #2e7d32;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 20px; font-weight: bold;
+        }
+        .permiso-details h4 { margin: 0 0 5px 0; font-size: 16px; color: #333; }
+        .permiso-details p { margin: 0; font-size: 13px; color: #666; }
+        .permiso-type {
+            font-size: 11px; font-weight: bold; text-transform: uppercase;
+            padding: 3px 8px; border-radius: 4px; margin-bottom: 5px; display: inline-block;
+        }
+        .type-vacaciones { background: #e3f2fd; color: #1976d2; }
+        .type-permiso { background: #f3e5f5; color: #7b1fa2; }
+        .permiso-actions { display: flex; gap: 10px; }
+        .btn-approve-lg { background: #4CAF50; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .btn-reject-lg { background: #F44336; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .btn-approve-lg:hover { background: #388E3C; }
+        .btn-reject-lg:hover { background: #D32F2F; }
+        .date-badge { background: #f5f5f5; padding: 5px 10px; border-radius: 6px; font-size: 12px; color: #333; display: inline-block; margin-top: 5px; }
+        .empty { text-align: center; padding: 60px; color: #999; }
+
+        /* Formulario de Asignación */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-control:focus { border-color: #FFC107; }
+        .btn-save-yellow {
+            background-color: #FFC107; color: #000; padding: 12px 25px;
+            border-radius: 10px; border: none; cursor: pointer; font-weight: 700;
+            display: flex; align-items: center; gap: 10px; transition: background 0.2s;
+        }
+        .btn-save-yellow:hover { background-color: #e6af06; }
     </style>
 </head>
 <body>
@@ -128,76 +158,97 @@ unset($_SESSION['alert']);
             </a>
         </nav>
         <main class="content">
-            <h1 class="page-title">Módulo de Permisos</h1>
+            <h1 class="page-title">Módulo de Permisos y Vacaciones</h1>
             <div class="divider"></div>
 
+            <!-- Formulario de Asignación Directa (Admin) -->
+            <div class="card" style="border-radius: 15px; border-top: 5px solid #FFC107;">
+                <h2 style="font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa fa-calendar-plus" style="color: #FFC107;"></i> Asignar Permiso o Vacaciones a Trabajador
+                </h2>
+                <form action="../../controllers/PermisoController.php?accion=asignar_admin" method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Seleccionar Trabajador</label>
+                            <select name="id_trabajador" class="form-control" required>
+                                <option value="">-- Seleccione un trabajador --</option>
+                                <?php foreach ($trabajadoresList as $t): ?>
+                                    <option value="<?= $t['id_trabajador'] ?>"><?= htmlspecialchars($t['nombres'] . ' ' . $t['apellidos']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Motivo de Permiso o Vacaciones</label>
+                            <input type="text" name="motivo" class="form-control" placeholder="Escriba el motivo (ej: Vacaciones, Cita Médica...)" required>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Desde Fecha</label>
+                            <input type="datetime-local" name="fecha_inicio" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Hasta Fecha</label>
+                            <input type="datetime-local" name="fecha_fin" class="form-control" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-save-yellow">
+                        <i class="fa fa-save"></i> Generar y Asignar Permiso
+                    </button>
+                </form>
+            </div>
+
             <div class="card">
-                <div class="card-header">
-                    <h2>Solicitudes de Permisos y Vacaciones</h2>
-                </div>
-                <div class="search-bar">
-                    <input type="text" id="buscar" placeholder="🔍 Buscar por trabajador..." oninput="filtrar()">
+                <div class="search-container">
+                    <i class="fa fa-search search-icon"></i>
+                    <input type="text" id="buscar" class="search-input" placeholder="Buscar por trabajador o motivo..." oninput="filtrar()">
                 </div>
 
-                <?php if (empty($permisos)): ?>
-                    <div class="empty">
-                        <i class="fa fa-folder-open fa-3x" style="margin-bottom:12px;display:block"></i>
-                        No hay permisos registrados.
-                    </div>
-                <?php else: ?>
-                    <table id="tabla">
-                        <thead>
-                            <tr>
-                                <th>Rango de Fechas</th>
-                                <th>Trabajador</th>
-                                <th>Motivo</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($permisos as $p): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?= date('d/m/Y', strtotime($p['fecha_inicio'])) ?></strong> <br>
-                                        <span style="color:#777; font-size:11px;">hasta</span> <br>
-                                        <strong><?= date('d/m/Y', strtotime($p['fecha_fin'])) ?></strong>
-                                    </td>
-                                    <td>
-                                        <strong><?= htmlspecialchars($p['nombres'] . ' ' . $p['apellidos']) ?></strong> <br>
-                                        <small style="color: #666;">Doc: <?= htmlspecialchars($p['documento']) ?></small>
-                                    </td>
-                                    <td style="max-width: 250px; color: #555;"><?= htmlspecialchars($p['motivo']) ?></td>
-                                    <td>
-                                        <span class="badge badge-<?= strtolower($p['estado']) ?>">
-                                            <?= htmlspecialchars($p['estado']) ?>
-                                        </span>
-                                    </td>
-                                    <td style="white-space: nowrap;">
-                                        <?php if ($p['estado'] === 'pendiente'): ?>
-                                            <form action="../../controllers/PermisoController.php?accion=cambiarEstado" method="POST" style="display:inline;" onsubmit="return confirmar(event, 'aprobado')">
-                                                <input type="hidden" name="id_permiso" value="<?= $p['id_permiso'] ?>">
-                                                <input type="hidden" name="estado" value="aprobado">
-                                                <button type="submit" class="btn-action btn-approve" title="Aceptar Permiso" style="background:#4CAF50; border:none; color:#fff; padding:8px 12px; border-radius:8px; cursor:pointer; margin-right:5px;">
-                                                    <i class="fa fa-check"></i>
-                                                </button>
-                                            </form>
-                                            <form action="../../controllers/PermisoController.php?accion=cambiarEstado" method="POST" style="display:inline;" onsubmit="return confirmar(event, 'rechazado')">
-                                                <input type="hidden" name="id_permiso" value="<?= $p['id_permiso'] ?>">
-                                                <input type="hidden" name="estado" value="rechazado">
-                                                <button type="submit" class="btn-action btn-reject" title="Rechazar Permiso" style="background:#F44336; border:none; color:#fff; padding:8px 12px; border-radius:8px; cursor:pointer;">
-                                                    <i class="fa fa-times"></i>
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <span style="color:#999; font-style:italic; font-size:12px;">Procesado</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+                <div id="permisos-lista">
+                    <?php if (empty($permisos)): ?>
+                        <div class="empty">
+                            <i class="fa fa-folder-open fa-3x" style="margin-bottom:15px;display:block"></i>
+                            No hay solicitudes de permisos o vacaciones pendientes.
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($permisos as $p): 
+                            $isVacation = stripos($p['motivo'], 'vacacion') !== false;
+                            $typeLabel = $isVacation ? 'Vacaciones' : 'Permiso';
+                            $typeClass = $isVacation ? 'type-vacaciones' : 'type-permiso';
+                        ?>
+                            <div class="permiso-card" data-search="<?= strtolower($p['nombres'] . ' ' . $p['apellidos'] . ' ' . $p['motivo']) ?>">
+                                <div class="permiso-info">
+                                    <div class="worker-avatar">
+                                        <?= strtoupper(substr($p['nombres'], 0, 1) . substr($p['apellidos'], 0, 1)) ?>
+                                    </div>
+                                    <div class="permiso-details">
+                                        <span class="permiso-type <?= $typeClass ?>"><?= $typeLabel ?></span>
+                                        <h4><?= htmlspecialchars($p['nombres'] . ' ' . $p['apellidos']) ?></h4>
+                                        <p><strong>Motivo:</strong> <?= htmlspecialchars($p['motivo']) ?></p>
+                                        <div class="date-badge">
+                                            <i class="fa fa-calendar-alt"></i> 
+                                            <?= date('d/m/Y H:i', strtotime($p['fecha_inicio'])) ?> 
+                                            <i class="fa fa-arrow-right" style="margin: 0 5px;"></i>
+                                            <?= date('d/m/Y H:i', strtotime($p['fecha_fin'])) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="permiso-actions">
+                                    <?php if ($p['estado'] === 'pendiente'): ?>
+                                        <button type="button" class="btn-approve-lg" onclick="gestionarPermiso(<?= $p['id_permiso'] ?>, 'aprobado', '<?= $typeLabel ?>', '<?= $p['fecha_fin'] ?>')">
+                                            <i class="fa fa-check-circle"></i> Aceptar <?= $typeLabel ?>
+                                        </button>
+                                        <button type="button" class="btn-reject-lg" onclick="gestionarPermiso(<?= $p['id_permiso'] ?>, 'rechazado', '<?= $typeLabel ?>')">
+                                            <i class="fa fa-times-circle"></i> No Aceptar
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="badge badge-<?= strtolower($p['estado']) ?>"><?= htmlspecialchars($p['estado']) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </div>
@@ -205,31 +256,73 @@ unset($_SESSION['alert']);
     <script>
         function filtrar() {
             const q = document.getElementById('buscar').value.toLowerCase();
-            document.querySelectorAll('#tabla tbody tr').forEach(tr => {
-                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            document.querySelectorAll('.permiso-card').forEach(card => {
+                const text = card.getAttribute('data-search');
+                card.style.display = text.includes(q) ? 'flex' : 'none';
             });
         }
 
-        function confirmar(e, estado) {
-            e.preventDefault();
-            const form = e.target;
-            const accionText = estado === 'aprobado' ? 'aprobar' : 'rechazar';
-            const color = estado === 'aprobado' ? '#4CAF50' : '#F44336';
+        async function gestionarPermiso(id, estado, tipo, fechaFinActual = '') {
+            const isAprobar = estado === 'aprobado';
+            const actionText = isAprobar ? 'Aprobar' : 'Rechazar';
+            const color = isAprobar ? '#4CAF50' : '#F44336';
+            
+            let htmlContent = `¿Está seguro de que desea ${actionText.toLowerCase()} esta solicitud de <strong>${tipo}</strong>?`;
+            
+            if (isAprobar) {
+                if (tipo === 'Vacaciones') {
+                    htmlContent += `
+                        <div style="margin-top:20px; text-align:left;">
+                            <label style="display:block; font-size:14px; margin-bottom:5px;"><strong>Aceptar vacaciones hasta el día:</strong></label>
+                            <input type="date" id="swal-fecha-fin" class="swal2-input" value="${fechaFinActual.split(' ')[0]}" style="width:100%; margin:0;">
+                        </div>`;
+                } else {
+                    htmlContent += `
+                        <div style="margin-top:20px; text-align:left;">
+                            <label style="display:block; font-size:14px; margin-bottom:5px;"><strong>Confirmar fecha y hora exacta:</strong></label>
+                            <input type="datetime-local" id="swal-fecha-fin" class="swal2-input" value="${fechaFinActual.replace(' ', 'T')}" style="width:100%; margin:0;">
+                        </div>`;
+                }
+            }
 
-            Swal.fire({
+            const { isConfirmed, value: fechaFin } = await Swal.fire({
+                title: `${actionText} Solicitud`,
+                html: htmlContent,
                 icon: 'question',
-                title: `¿Desea ${accionText} este permiso?`,
                 showCancelButton: true,
                 confirmButtonColor: color,
                 cancelButtonColor: '#aaa',
-                confirmButtonText: 'Sí, ' + accionText,
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
+                confirmButtonText: `Sí, ${actionText}`,
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    if (isAprobar) {
+                        return document.getElementById('swal-fecha-fin').value;
+                    }
                 }
             });
-            return false;
+
+            if (isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '../../controllers/PermisoController.php?accion=cambiarEstado';
+                
+                const fields = {
+                    'id_permiso': id,
+                    'estado': estado,
+                    'fecha_fin': fechaFin || ''
+                };
+
+                for (const name in fields) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = fields[name];
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
     </script>
     <?php if ($alert && is_array($alert)): ?>

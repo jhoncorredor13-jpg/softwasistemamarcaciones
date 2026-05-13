@@ -266,17 +266,17 @@ unset($_SESSION['alert']);
                     <input type="hidden" name="id_trabajador" value="<?= $trabajador['id_trabajador'] ?? '' ?>">
                     <div class="flex-row">
                         <div class="form-group flex-col">
-                            <label>Desde la fecha</label>
-                            <input type="date" name="fecha_inicio" class="form-control" required min="<?= date('Y-m-d') ?>">
+                            <label>Desde (Fecha y Hora)</label>
+                            <input type="datetime-local" name="fecha_inicio" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                         </div>
                         <div class="form-group flex-col">
-                            <label>Hasta la fecha</label>
-                            <input type="date" name="fecha_fin" class="form-control" required min="<?= date('Y-m-d') ?>">
+                            <label>Hasta (Fecha y Hora)</label>
+                            <input type="datetime-local" name="fecha_fin" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Motivo de la solicitud</label>
-                        <textarea name="motivo" class="form-control" rows="3" required placeholder="Explique brevemente el motivo de su ausencia..."></textarea>
+                        <textarea name="motivo" class="form-control" rows="3" required placeholder="Escriba 'Vacaciones' o el motivo de su permiso..."></textarea>
                     </div>
                     <button type="submit" class="btn-submit"><i class="fa fa-paper-plane"></i> Enviar Solicitud</button>
                 </form>

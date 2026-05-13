@@ -532,9 +532,7 @@ unset($_SESSION['alert']);
                         <div class="form-group">
                             <label>Rol *</label>
                             <select name="rol" required>
-                                <option value="">-- Seleccione --</option>
-                                <option value="administrador">Administrador</option>
-                                <option value="trabajador">Trabajador</option>
+                                <option value="trabajador" selected>Trabajador</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -542,7 +540,9 @@ unset($_SESSION['alert']);
                             <select name="id_cargo" required>
                                 <option value="">-- Seleccione --</option>
                                 <?php foreach ($cargos as $c): ?>
-                                    <option value="<?= $c['id_cargo'] ?>"><?= $c['nombre'] ?></option>
+                                    <?php if (strtolower($c['nombre']) !== 'administrador'): ?>
+                                        <option value="<?= $c['id_cargo'] ?>"><?= $c['nombre'] ?></option>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -577,8 +577,22 @@ unset($_SESSION['alert']);
                     <div class="form-group"><label>Correo Electrónico *</label><input type="email" name="email" id="edit_email" required></div>
                     <div class="form-group"><label>Nueva Contraseña (vacío para no cambiar)</label><input type="password" name="password"></div>
                     <div class="form-grid">
-                        <div class="form-group"><label>Rol *</label><select name="rol" id="edit_rol" required><option value="administrador">Administrador</option><option value="trabajador">Trabajador</option></select></div>
-                        <div class="form-group"><label>Cargo *</label><select name="id_cargo" id="edit_cargo" required><?php foreach ($cargos as $c): ?><option value="<?= $c['id_cargo'] ?>"><?= $c['nombre'] ?></option><?php endforeach; ?></select></div>
+                        <div class="form-group">
+                            <label>Rol *</label>
+                            <select name="rol" id="edit_rol" required>
+                                <option value="trabajador">Trabajador</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cargo *</label>
+                            <select name="id_cargo" id="edit_cargo" required>
+                                <?php foreach ($cargos as $c): ?>
+                                    <?php if (strtolower($c['nombre']) !== 'administrador'): ?>
+                                        <option value="<?= $c['id_cargo'] ?>"><?= $c['nombre'] ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
